@@ -263,7 +263,7 @@ function resolveDay(day){
   // Detecta si un texto es 100% IDEM y devuelve la disciplina fuente
   function cloneSrc(text){
     if(!text)return null;
-    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.trim()!=='');
     if(!lines.length)return null;
     if(!lines.every(l=>IDEM_RE.test(l)))return null;
     const srcs=new Set();
@@ -276,7 +276,7 @@ function resolveDay(day){
   // Resuelve texto: reemplaza líneas IDEM por el contenido real del bloque referenciado
   function resolveText(text){
     if(!text)return text;
-    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.trim()!=='');
     if(lines.every(l=>IDEM_RE.test(l))){
       let res='';
       for(const l of lines){
