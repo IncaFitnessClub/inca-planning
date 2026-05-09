@@ -452,11 +452,11 @@ function buildDay(name,date,cf,fun,gap,cloneOf,cfH,funH,gapH){
     const mi=L.merged,si=L.solo;
     const mL=mi.map(i=>DISC[i]).join(' · '),sL=DISC[si];
     if(si===2){
-      hdrs='<div class="disc-headers" style="grid-template-columns:2fr 1fr;"><div class="disc-hdr" style="grid-column:span 2;">'+mL+'</div><div class="disc-hdr">'+sL+'</div></div>';
-      body='<div class="disc-body" style="grid-template-columns:2fr 1fr;">'+col('grid-column:span 2',w(mi[0],texts[mi[0]],hArr[mi[0]]))+col('',w(si,texts[si],hArr[si]))+'</div>';
+      hdrs='<div class="disc-headers" style="grid-template-columns:2fr 1fr;"><div class="disc-hdr">'+mL+'</div><div class="disc-hdr">'+sL+'</div></div>';
+      body='<div class="disc-body" style="grid-template-columns:2fr 1fr;">'+col('',w(mi[0],texts[mi[0]],hArr[mi[0]]))+col('',w(si,texts[si],hArr[si]))+'</div>';
     }else if(si===0){
-      hdrs='<div class="disc-headers" style="grid-template-columns:1fr 2fr;"><div class="disc-hdr">'+sL+'</div><div class="disc-hdr" style="grid-column:span 2;">'+mL+'</div></div>';
-      body='<div class="disc-body" style="grid-template-columns:1fr 2fr;">'+col('',w(si,texts[si],hArr[si]))+col('grid-column:span 2',w(mi[0],texts[mi[0]],hArr[mi[0]]))+'</div>';
+      hdrs='<div class="disc-headers" style="grid-template-columns:1fr 2fr;"><div class="disc-hdr">'+sL+'</div><div class="disc-hdr">'+mL+'</div></div>';
+      body='<div class="disc-body" style="grid-template-columns:1fr 2fr;">'+col('',w(si,texts[si],hArr[si]))+col('',w(mi[0],texts[mi[0]],hArr[mi[0]]))+'</div>';
     }else{
       hdrs='<div class="disc-headers" style="grid-template-columns:1fr 1fr 1fr;">'+DISC.map(d=>'<div class="disc-hdr">'+d+'</div>').join('')+'</div>';
       body='<div class="disc-body" style="grid-template-columns:1fr 1fr 1fr;">'+texts.map((t,i)=>col('',w(i,t,hArr[i]))).join('')+'</div>';
