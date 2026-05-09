@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INCA Fitness Club – Planificaciones</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap');
+
+  :root {
+    --orange: #E8511A;
+    --cream:  #EDE8E0;
+    --dark:   #3A3A3A;
+    --divider: rgba(58,58,58,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow', sans-serif; background: #2a2a2a; color: var(--dark); min-height: 100vh; }
+
+  /* ══ UPLOAD ══ */
+  #upload-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; padding: 40px; gap: 28px;
+  }
+  .upload-title {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+    font-size: 52px; color: var(--orange); letter-spacing: 4px;
+    text-align: center; line-height: 1;
+  }
+  .upload-title span { display: block; font-size: 16px; color: #888; letter-spacing: 6px; font-weight: 400; margin-top: 6px; }
+  .upload-box {
+    background: #333; border: 2px dashed #555; border-radius: 14px;
+    padding: 52px 72px; text-align: center; cursor: pointer;
+    transition: all 0.2s; max-width: 480px; width: 100%;
+  }
+  .upload-box:hover, .upload-box.drag { border-color: var(--orange); background: #3a3a3a; }
+  .upload-icon { font-size: 40px; margin-bottom: 12px; }
+  .upload-box h2 { color: #eee; font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .upload-box p  { color: #888; font-size: 13px; line-height: 1.7; }
+  .upload-box p strong { color: var(--orange); }
+  #file-input { display: none; }
+  .upload-btn {
+    margin-top: 20px; background: var(--orange); color: #fff; border: none;
+    padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: 'Barlow', sans-serif; letter-spacing: 1px; transition: opacity 0.2s;
+  }
+  .upload-btn:hover { opacity: 0.85; }
+  .upload-note { color: #666; font-size: 12px; text-align: center; max-width: 360px; line-height: 1.6; }
+  #upload-error { margin-top: 6px; }
+  .error-msg { color: #e74c3c; font-size: 14px; background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); border-radius: 8px; padding: 12px 20px; max-width: 460px; text-align: center; }
+
+  /* ══ APP SHELL ══ */
+  #app { display: none; }
+  .app-header {
+    background: var(--dark); padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 2px solid var(--orange);
+  }
+  .week-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .week-tab {
+    background: #2a2a2a; color: #aaa; border: 1px solid #555;
+    padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'Barlow', sans-serif; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .week-tab:hover { border-color: var(--orange); color: var(--orange); }
+  .week-tab.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .header-btns { display: flex; gap: 8px; align-items: center; }
+  .btn-action {
+    background: transparent; color: #aaa; border: 1.5px solid #555;
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'Barlow', sans-serif; transition: all 0.15s;
+  }
+  .btn-action:hover { color: #eee; border-color: #888; }
+  .btn-action.orange { color: var(--orange); border-color: var(--orange); }
+  .btn-action.orange:hover { background: var(--orange); color: #fff; }
+
+  .day-nav {
+    background: #222; padding: 0 24px; display: flex;
+    overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid #333;
+  }
+  .day-nav::-webkit-scrollbar { display: none; }
+  .day-btn {
+    padding: 10px 20px; background: transparent; border: none;
+    border-bottom: 3px solid transparent; color: #666; font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; cursor: pointer; font-family: 'Barlow', sans-serif;
+    text-transform: uppercase; transition: all 0.15s; white-space: nowrap; text-align: center; line-height: 1.4;
+  }
+  .day-btn:hover { color: #aaa; }
+  .day-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+  #days-container { padding: 0; margin: 0; height: calc(100vh - 96px); display: flex; flex-direction: column; overflow: hidden; }
+  .day-slide { display: none; height: 100%; }
+  .day-slide.active { display: flex; flex-direction: column; height: 100%; }
+
+  /* ══ CARD ══ */
+  .canva-card { background: var(--cream); border-radius: 0; overflow: hidden; box-shadow: none; width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+  .card-top { background: var(--dark); padding: clamp(8px,1.2vh,16px) 28px; display: flex; align-items: center; }
+  .card-day-name { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(18px,3vh,32px); font-weight: 800; letter-spacing: 4px; color: var(--cream); text-transform: uppercase; line-height: 1; margin-right: 16px; }
+  .card-day-date { font-size: clamp(11px,1.6vh,16px); color: #999; font-weight: 400; letter-spacing: 2px; }
+
+  .disc-headers { background: var(--dark); display: grid; border-top: 1px solid #555; }
+  .disc-header-cell {
+    padding: clamp(6px,1vh,12px) 16px; text-align: center;
+    font-family: 'Barlow Condensed', sans-serif; font-size: clamp(18px,3vh,32px); font-weight: 800;
+    letter-spacing: 3px; color: var(--cream); border-right: 1px solid #555; text-transform: uppercase;
+  }
+  .disc-header-cell:last-child { border-right: none; }
+
+  .disc-body { display: grid; flex: 1; min-height: 0; }
+  .disc-col { padding: 18px 20px; border-right: 1px solid var(--divider); text-align: center; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
+  .disc-col:last-child { border-right: none; }
+
+  .shared-row { padding: 16px 24px; text-align: center; border-bottom: 1px solid var(--divider); background: var(--cream); display: flex; align-items: center; justify-content: center; }
+
+  /* ══ WOD TEXT ══ */
+  .wod-text { font-family: 'Barlow', sans-serif; font-size: clamp(13px, 1.9vw, 26px); line-height: 1.5; color: var(--dark); width: 100%; word-break: break-word; overflow-wrap: break-word; }
+  .wod-block-header { display: block; font-weight: 700; word-break: break-word; overflow-wrap: break-word; }
+  .wod-method      { display: block; font-weight: 700; word-break: break-word; overflow-wrap: break-word; }
+  .wod-line        { display: block; font-weight: 700; word-break: break-word; overflow-wrap: break-word; }
+  .wod-divider     { display: block; border: none; border-top: 1px solid var(--divider); margin: 12px auto; width: 75%; }
+  .wod-empty       { color: #aaa; font-style: italic; font-size: 0.88em; font-family: 'Barlow', sans-serif; }
+
+  @media print {
+    body { background: white; }
+    .app-header, .day-nav { display: none !important; }
+    #days-container { padding: 0; }
+    .day-slide { display: block !important; page-break-after: always; }
+    .day-slide:last-child { page-break-after: avoid; }
+    .canva-card { box-shadow: none; border: 1px solid #ccc; border-radius: 0; max-width: 100%; }
+    .wod-text { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="upload-screen">
+  <div class="upload-title">INCA FITNESS CLUB<span>PLANIFICACIONES SEMANALES</span></div>
+  <div class="upload-box">
+    <div class="upload-icon">⏳</div>
+    <h2>Cargando planificaciones...</h2>
+    <p>Conectando con Google Sheets</p>
+  </div>
+  <div id="upload-error"></div>
+</div>
+
+<div id="app">
+  <div class="app-header">
+    <div class="week-tabs" id="week-tabs"></div>
+    <div class="header-btns">
+      <button class="btn-action orange" onclick="window.print()">🖨 Imprimir</button>
+      <button class="btn-action" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+      <button class="btn-action" onclick="resetApp()">↺ Actualizar</button>
+    </div>
+  </div>
+  <div class="day-nav" id="day-nav"></div>
+  <div id="days-container"></div>
+</div>
+
+<script>
+const DAYS_ES = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+const COL_IDX = [1,4,7,10,13,16];
+const DISC    = ['CROSSFIT','FUNCIONAL','GAP'];
+
+let allWeeks   = [];
+let currentWeek = 0;
+let currentDay  = 0;
+
+/* ── FILE ── */
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+dropZone.addEventListener('dragover',  e=>{e.preventDefault();dropZone.classList.add('drag');});
+dropZone.addEventListener('dragleave', ()=>dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e=>{e.preventDefault();dropZone.classList.remove('drag');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);});
+fileInput.addEventListener('change', e=>{if(e.target.files[0])processF/* ── GOOGLE SHEETS FETCH ── */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxE6t91W7SR6Sn6DnpB2K7J7nGQWxZJYcaWptWpfv5sCstAVEy_r7TXQUWmbNNxHNtK2Q/exec';
+
+function escHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function convertSheetData(raw){
+  const data=[], dataHTML={};
+  const COLS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  function colName(ci){ return ci<26?COLS[ci]:COLS[Math.floor(ci/26)-1]+COLS[ci%26]; }
+  raw.forEach((row,ri)=>{
+    const plainRow=[];
+    row.forEach((cell,ci)=>{
+      let plain='', html='';
+      if(!cell){ plain=''; html=''; }
+      else if(cell.parts){
+        plain=cell.parts.map(p=>p.text).join('');
+        html=cell.parts.map(p=>p.bold?'<b>'+escHtml(p.text)+'</b>':escHtml(p.text)).join('');
+        html=html.replace(/
+/g,'<br>').replace(/
+/g,'<br>');
+      } else {
+        plain=cell.text||'';
+        html=escHtml(plain).replace(/
+/g,'<br>').replace(/
+/g,'<br>');
+      }
+      plain=plain.replace(/
+/g,'
+').replace(//g,'
+');
+      plainRow.push(plain);
+      const addr=colName(ci)+(ri+1);
+      if(html) dataHTML[addr]=html;
+    });
+    data.push(plainRow);
+  });
+  return {data,dataHTML};
+}
+
+async function loadFromSheets(){
+  document.getElementById('upload-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('upload-error').innerHTML='';
+  try{
+    const resp=await fetch(SCRIPT_URL);
+    if(!resp.ok) throw new Error('Error HTTP '+resp.status);
+    const raw=await resp.json();
+    const {data,dataHTML}=convertSheetData(raw);
+    allWeeks=parseWeeks(data,data,dataHTML,null);
+    if(!allWeeks.length) throw new Error('No se encontraron semanas en la planilla.');
+    currentWeek=detectCurrentWeek();
+    currentDay=0;
+    buildApp();
+  }catch(err){ showError('Error al cargar: '+err.message); }
+}ll = rowsRaw && rowsRaw[fechaRows[0]] && rowsRaw[fechaRows[0]][2];
+  if(rawCell instanceof Date && !isNaN(rawCell)){
+    baseDate = rawCell;
+  } else {
+    // Try formatted string
+    const fmtCell = rows[fechaRows[0]][2];
+    if(fmtCell){
+      // Try yyyy-mm-dd or other formats
+      const d = new Date(String(fmtCell).replace(/(\d{4})-(\d{2})-(\d{2}).*/, '$1-$2-$3'));
+      if(!isNaN(d)) baseDate=d;
+    }
+    // Try numeric serial (Excel date serial)
+    if(!baseDate && typeof rawCell === 'number'){
+      // Excel serial: days since 1900-01-01 (with leap year bug)
+      const excelEpoch = new Date(1899,11,30);
+      baseDate = new Date(excelEpoch.getTime() + rawCell * 86400000);
+    }
+  }
+  if(!baseDate) return weeks;
+
+  fechaRows.forEach((fi,w)=>{
+    const lunesDate=new Date(baseDate);
+    lunesDate.setDate(baseDate.getDate()+w*7);
+
+    const cfRow  = rows[fi+2]||[];
+    const funRow = rows[fi+3]||[];
+    const gapRow = rows[fi+4]||[];
+
+    // Helper: get cell address for given row index and col index
+    function cellAddr(rowIdx, colIdx){
+      const COLS2='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const col=colIdx<26?COLS2[colIdx]:COLS2[Math.floor(colIdx/26)-1]+COLS2[colIdx%26];
+      return col+(rowIdx+1);
+    }
+    const cfRowIdx  = fi+2, funRowIdx = fi+3, gapRowIdx = fi+4;
+
+    const days = COL_IDX.map((ci, di)=>{
+      const cfAddr  = cellAddr(cfRowIdx,  ci);
+      const funAddr = cellAddr(funRowIdx, ci);
+      const gapAddr = cellAddr(gapRowIdx, ci);
+      return {
+        cf:  (cfRow[ci] ||'').trim(),
+        fun: (funRow[ci]||'').trim(),
+        gap: (gapRow[ci]||'').trim(),
+        cfH:  dataHTML[cfAddr]  || null,
+        funH: dataHTML[funAddr] || null,
+        gapH: dataHTML[gapAddr] || null,
+      };
+    });
+    weeks.push({lunesDate, days});
+  });
+  return weeks;
+}
+
+/* ── CURRENT WEEK ── */
+function detectCurrentWeek(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  let best=0;
+  for(let i=0;i<allWeeks.length;i++){
+    const lunes=new Date(allWeeks[i].lunesDate); lunes.setHours(0,0,0,0);
+    const sab=new Date(lunes); sab.setDate(lunes.getDate()+5);
+    if(today>=lunes&&today<=sab) return i;
+    if(today>sab) best=i;
+  }
+  return Math.min(best,allWeeks.length-1);
+}
+
+function getVisibleIndices(cur){
+  // Always show prev, current, next - centered around current
+  // We always show up to 3: the one before current, current, one after
+  const total = allWeeks.length;
+  let start = Math.max(0, cur - 1);
+  let end   = Math.min(total - 1, start + 2);
+  // Adjust start if at end
+  start = Math.max(0, end - 2);
+  const v = [];
+  for(let i = start; i <= end; i++) v.push(i);
+  return v;
+}
+
+/* ── DATE FORMAT DD/MM/AAAA ── */
+function fmtDate(base,offset){
+  if(!base) return '';
+  const d=new Date(base); d.setDate(d.getDate()+(offset||0));
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function fmtWeekLabel(w){
+  if(!w.lunesDate) return '—';
+  return fmtDate(w.lunesDate,0)+' – '+fmtDate(w.lunesDate,5);
+}
+
+/* ── IDEM RESOLUTION ── */
+const IDEM_LINE_RE = /^[AB]\.\s*IDEM\s+BLOQUE\s+([AB])\s+(CROSSFIT|FUNCIONAL|GAP)/i;
+
+function extractBlock(text,letter){
+  const lines=(text||'').split('\n');
+  let capturing=false, out=[];
+  for(const l of lines){
+    const t=l.trim();
+    if(!capturing){
+      if(letter==='A'&&/^A[\.\s]/i.test(t)){capturing=true;out=[l];}
+      else if(letter==='B'&&/^B[\.\s]/i.test(t)){capturing=true;out=[l];}
+    } else {
+      if(letter==='A'&&/^B[\.\s]/i.test(t)) break;
+      if(letter==='B'&&/^A[\.\s]/i.test(t)) break;
+      out.push(l);
+    }
+  }
+  return out.join('\n').trim();
+}
+
+function resolveDay(day){
+  const orig={cf:day.cf,fun:day.fun,gap:day.gap};
+  const discMap={crossfit:'cf',funcional:'fun',gap:'gap'};
+  const keys=['cf','fun','gap'];
+
+  // Detect full clone BEFORE resolving:
+  // a cell whose non-empty lines are ALL IDEM refs pointing to the same source
+  function detectCloneSource(text){
+    if(!text) return null;
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+    if(!lines.length) return null;
+    if(!lines.every(l=>IDEM_LINE_RE.test(l))) return null;
+    const sources=new Set();
+    for(const l of lines){ const m=l.match(IDEM_LINE_RE); if(m) sources.add(m[2].toLowerCase()); }
+    if(sources.size===1) return discMap[[...sources][0]];
+    return null;
+  }
+
+  const cloneOf={cf:null,fun:null,gap:null};
+  keys.forEach(k=>{ cloneOf[k]=detectCloneSource(orig[k]); });
+
+  function resolveText(text){
+    if(!text) return text;
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+    const allIdem=lines.every(l=>IDEM_LINE_RE.test(l));
+    if(allIdem&&lines.length>=1){
+      let result='';
+      for(const l of lines){
+        const m=l.match(IDEM_LINE_RE);
+        if(m){
+          const blk=m[1].toUpperCase();
+          const src=discMap[m[2].toLowerCase()];
+          const extracted=extractBlock(orig[src],blk);
+          if(extracted) result+=(result?'\n':'')+extracted;
+        }
+      }
+      return result;
+    }
+    const out=[];
+    for(const rawLine of text.split('\n')){
+      const t=rawLine.trim();
+      const m=t.match(IDEM_LINE_RE);
+      if(m){
+        const blk=m[1].toUpperCase();
+        const src=discMap[m[2].toLowerCase()];
+        const extracted=extractBlock(orig[src],blk);
+        if(extracted) out.push(extracted);
+      } else { out.push(rawLine); }
+    }
+    return out.join('\n');
+  }
+
+  // Resolve HTML for bold formatting
+  const origH = {cf: day.cfH||null, fun: day.funH||null, gap: day.gapH||null};
+
+  function resolveHTML(html, key){
+    if(!html) return null;
+    // Full clone: use source HTML entirely
+    const cloneSrc = cloneOf[key];
+    if(cloneSrc) return origH[cloneSrc] || null;
+    // Partial IDEM: strip IDEM lines from HTML
+    let h = html;
+    h = h.replace(/(<br\s*[/]?>)?[^<]*IDEM\s+BLOQUE\s+[AB]\s+(CROSSFIT|FUNCIONAL|GAP)[^<]*/gi, '');
+    h = h.replace(/(<br\s*[/]?>)+/gi, '<br>');
+    return h;
+  }
+
+  return {
+    cf:resolveText(orig.cf), fun:resolveText(orig.fun), gap:resolveText(orig.gap),
+    cfH: resolveHTML(origH.cf,'cf'),
+    funH: resolveHTML(origH.fun,'fun'),
+    gapH: resolveHTML(origH.gap,'gap'),
+    cloneOf
+  };
+}
+
+/* ── FORMAT WOD HTML ──
+   Uses Excel rich text (HTML) when available to determine bold lines.
+   Falls back to heuristic otherwise.
+*/
+function fmtFromHTML(htmlSrc){
+  if(!htmlSrc) return null;
+  // Walk through HTML char by char, tracking bold state
+  // Build array of {text, bold} segments
+  const segs=[];
+  let i=0, cur='', bold=false;
+  const s=htmlSrc;
+  while(i<s.length){
+    const ch=s[i];
+    if(ch==='<'){
+      const end=s.indexOf('>',i);
+      if(end===-1){cur+=ch;i++;continue;}
+      const tag=s.slice(i,end+1).toLowerCase();
+      if(tag==='<b>'||tag.startsWith('<b ')){
+        if(cur){segs.push({t:cur,b:bold});cur='';}
+        bold=true; i=end+1;
+      } else if(tag==='</b>'){
+        if(cur){segs.push({t:cur,b:true});cur='';}
+        bold=false; i=end+1;
+      } else if(tag.startsWith('<br')){
+        cur+='\n'; i=end+1;
+      } else {
+        // skip other tags
+        i=end+1;
+      }
+    } else if(ch==='&'){
+      // decode entities
+      const semi=s.indexOf(';',i);
+      if(semi>i&&semi-i<=7){
+        const ent=s.slice(i,semi+1);
+        if(ent==='&amp;') cur+='&';
+        else if(ent==='&lt;') cur+='<';
+        else if(ent==='&gt;') cur+='>';
+        else if(ent==='&nbsp;') cur+=' ';
+        else cur+=ent;
+        i=semi+1;
+      } else {cur+=ch;i++;}
+    } else {
+      cur+=ch; i++;
+    }
+  }
+  if(cur) segs.push({t:cur,b:bold});
+
+  // Build per-line bold map
+  // Join all text with bold markers
+  let full='';
+  for(const seg of segs){
+    full+=seg.b?'\x01'+seg.t+'\x02':seg.t;
+  }
+
+  const lines=full.split('\n');
+  let html='', seenBlock=false;
+
+  for(const rawLine of lines){
+    const plain=rawLine.replace(/\x01|\x02/g,'').trim();
+    if(!plain) continue;
+
+    // Count bold chars vs total
+    let boldChars=0, totalChars=0;
+    let inB=false;
+    for(let j=0;j<rawLine.length;j++){
+      if(rawLine[j]==='\x01'){inB=true;continue;}
+      if(rawLine[j]==='\x02'){inB=false;continue;}
+      if(rawLine[j].trim()){totalChars++;if(inB)boldChars++;}
+    }
+    const isBold = totalChars>0 && boldChars/totalChars>=0.5;
+
+    if(/^B[.\s]/i.test(plain)&&seenBlock){
+      html+='<span class="wod-divider"></span>';
+    }
+    if(/^[AB][.\s]/i.test(plain)) seenBlock=true;
+
+    const esc=plain.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    html+=isBold
+      ?`<span class="wod-block-header">${esc}</span>`
+      :`<span class="wod-line">${esc}</span>`;
+  }
+  return html||null;
+}
+
+function fmt(text, htmlSrc){
+  if(!text||!text.trim()) return '<span class="wod-empty">Sin planificación</span>';
+  if(htmlSrc){const r=fmtFromHTML(htmlSrc);if(r) return r;}
+  // Fallback heuristic
+  const lines=text.split('\n').map(l=>l.trim());
+  let html='',nextBold=false;
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i];if(!l){nextBold=false;continue;}
+    const isHeader=/^[AB][\.\s](CONDITIONING|STRENGTH|STRENGHT|ACCESSORY|CORE|AMRAP|FOR TIME|EMOM|OTM|SKILL|PARTNER|BLOQUE)/i.test(l);
+    if(/^B[\.\s]/i.test(l)&&i>0) html+='<span class="wod-divider"></span>';
+    const esc=l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if(isHeader){html+=`<span class="wod-block-header">${esc}</span>`;nextBold=true;}
+    else if(nextBold){html+=`<span class="wod-method">${esc}</span>`;nextBold=false;}
+    else{html+=`<span class="wod-line">${esc}</span>`;}
+  }
+  return html;
+}
+
+/* ── LAYOUT DETECTION ── */
+function extractA(t){ return extractBlock(t,'A'); }
+function extractB(t){ return extractBlock(t,'B'); }
+
+function detectLayout(cf,fun,gap,cloneOf){
+  const texts=[cf,fun,gap];
+  const eq=(a,b)=>a&&b&&a.trim()===b.trim();
+
+  // Use cloneOf to detect full-class merges reliably (avoids text comparison failures)
+  if(cloneOf){
+    const cs=cloneOf.cf, fs=cloneOf.fun, gs=cloneOf.gap;
+    if(fs==='cf'&&gs==='cf') return {type:'all3same',text:cf};
+    if(cs==='fun'&&gs==='fun') return {type:'all3same',text:fun};
+    if(cs==='gap'&&fs==='gap') return {type:'all3same',text:gap};
+    if(fs==='cf'||cs==='fun') return {type:'2same',merged:[0,1],soloIdx:2};
+    if(gs==='fun'||fs==='gap') return {type:'2same',merged:[1,2],soloIdx:0};
+    if(gs==='cf'||cs==='gap') return {type:'2same',merged:[0,2],soloIdx:1};
+  }
+
+  const aBlocks=texts.map(extractA);
+  const bBlocks=texts.map(extractB);
+
+  // All 3 fully identical
+  if(eq(texts[0],texts[1])&&eq(texts[0],texts[2]))
+    return {type:'all3same', text:texts[0]};
+
+  // 2 fully identical
+  if(eq(texts[0],texts[1])) return {type:'2same',merged:[0,1],soloIdx:2};
+  if(eq(texts[1],texts[2])) return {type:'2same',merged:[1,2],soloIdx:0};
+  if(eq(texts[0],texts[2])) return {type:'2same',merged:[0,2],soloIdx:1};
+
+  // All 3 share A block
+  if(eq(aBlocks[0],aBlocks[1])&&eq(aBlocks[0],aBlocks[2]))
+    return {type:'sharedA_all3', sharedA:aBlocks[0], bBlocks};
+
+  // 2 share A block
+  if(eq(aBlocks[0],aBlocks[1])&&!eq(aBlocks[0],aBlocks[2]))
+    return {type:'sharedA_2',shared:[0,1],soloIdx:2,sharedA:aBlocks[0],bBlocks};
+  if(eq(aBlocks[1],aBlocks[2])&&!eq(aBlocks[0],aBlocks[1]))
+    return {type:'sharedA_2',shared:[1,2],soloIdx:0,sharedA:aBlocks[1],bBlocks};
+  if(eq(aBlocks[0],aBlocks[2])&&!eq(aBlocks[0],aBlocks[1]))
+    return {type:'sharedA_2',shared:[0,2],soloIdx:1,sharedA:aBlocks[0],bBlocks};
+
+  return {type:'3col'};
+}
+
+/* ── BUILD CARD HTML ── */
+function buildDayHTML(dayName,dateStr,cf,fun,gap,cloneOf,cfH,funH,gapH){
+  const texts=[cf,fun,gap];
+  const textsH=[cfH,funH,gapH];
+  const layout=detectLayout(cf,fun,gap,cloneOf);
+  // Helper: format with HTML source by index
+  const fmtI=(i,t)=>fmt(t||texts[i], textsH[i]);
+  const fmtT=(t,h)=>fmt(t,h);
+
+  let headersHTML='', bodyHTML='';
+
+  if(layout.type==='all3same'){
+    headersHTML=`<div class="disc-headers" style="grid-template-columns:1fr;">
+      <div class="disc-header-cell">CROSSFIT · FUNCIONAL · GAP</div></div>`;
+    bodyHTML=`<div class="disc-body" style="grid-template-columns:1fr;height:100%;">
+      <div class="disc-col"><div class="wod-text">${fmt(layout.text, cfH||funH||gapH)}</div></div></div>`;
+
+  } else if(layout.type==='2same'){
+    const mi=layout.merged, si=layout.soloIdx;
+    const mLabel=mi.map(i=>DISC[i]).join(' · ');
+    const sLabel=DISC[si];
+    // merged cols always adjacent: [0,1] or [1,2]; [0,2] is unusual
+    if(si===2){
+      // CF+FUN | GAP
+      headersHTML=`<div class="disc-headers" style="grid-template-columns:2fr 1fr;">
+        <div class="disc-header-cell">${mLabel}</div>
+        <div class="disc-header-cell">${sLabel}</div></div>`;
+      bodyHTML=`<div class="disc-body" style="grid-template-columns:2fr 1fr;height:100%;">
+        <div class="disc-col"><div class="wod-text">${fmtI(mi[0],texts[mi[0]])}</div></div>
+        <div class="disc-col"><div class="wod-text">${fmtI(si,texts[si])}</div></div></div>`;
+    } else if(si===0){
+      // CF | FUN+GAP
+      headersHTML=`<div class="disc-headers" style="grid-template-columns:1fr 2fr;">
+        <div class="disc-header-cell">${sLabel}</div>
+        <div class="disc-header-cell">${mLabel}</div></div>`;
+      bodyHTML=`<div class="disc-body" style="grid-template-columns:1fr 2fr;height:100%;">
+        <div class="disc-col"><div class="wod-text">${fmtI(si,texts[si])}</div></div>
+        <div class="disc-col"><div class="wod-text">${fmtI(mi[0],texts[mi[0]])}</div></div></div>`;
+    } else {
+      // CF | GAP (solo FUN middle — rare, show 3 cols)
+      headersHTML=`<div class="disc-headers" style="grid-template-columns:1fr 1fr 1fr;">
+        ${DISC.map(d=>`<div class="disc-header-cell">${d}</div>`).join('')}</div>`;
+      bodyHTML=`<div class="disc-body" style="grid-template-columns:1fr 1fr 1fr;height:100%;">
+        ${texts.map(t=>`<div class="disc-col"><div class="wod-text">${fmt(t)}</div></div>`).join('')}</div>`;
+    }
+
+  } else if(layout.type==='sharedA_all3'){
+    // Shared A full-width, then 3 cols for B
+    headersHTML=`<div class="disc-headers" style="grid-template-columns:1fr 1fr 1fr;">
+      ${DISC.map(d=>`<div class="disc-header-cell">${d}</div>`).join('')}</div>`;
+    const allBEmpty=layout.bBlocks.every(b=>!b||!b.trim());
+    if(allBEmpty){
+      bodyHTML=`<div class="disc-body" style="grid-template-columns:1fr;height:100%;">
+        <div class="disc-col" style="grid-column:span 3;"><div class="wod-text">${fmt(layout.sharedA, null)}</div></div></div>`;
+    } else {
+      bodyHTML=`<div>
+        <div class="shared-row"><div class="wod-text">${fmt(layout.sharedA, null)}</div></div>
+        <div class="disc-body" style="grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--divider);">
+          ${layout.bBlocks.map(b=>`<div class="disc-col"><div class="wod-text">${fmt(b)}</div></div>`).join('')}
+        </div></div>`;
+    }
+
+  } else if(layout.type==='sharedA_2'){
+    const sd=layout.shared, si=layout.soloIdx;
+    const sharedA=layout.sharedA;
+    const bBlocks=layout.bBlocks;
+    headersHTML=`<div class="disc-headers" style="grid-template-columns:1fr 1fr 1fr;">
+      ${DISC.map(d=>`<div class="disc-header-cell">${d}</div>`).join('')}</div>`;
+
+    if(sd[0]===0&&sd[1]===1){
+      // CF+FUN share A, GAP solo
+      bodyHTML=`<div style="display:grid;grid-template-columns:2fr 1fr;height:100%;">
+        <div>
+          <div class="shared-row"><div class="wod-text">${fmt(sharedA, null)}</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--divider);">
+            <div class="disc-col"><div class="wod-text">${fmt(bBlocks[0], null)}</div></div>
+            <div class="disc-col"><div class="wod-text">${fmt(bBlocks[1], null)}</div></div>
+          </div>
+        </div>
+        <div class="disc-col" style="border-left:1px solid var(--divider);">
+          <div class="wod-text">${fmtI(2,texts[2])}</div>
+        </div></div>`;
+    } else if(sd[0]===1&&sd[1]===2){
+      // FUN+GAP share A, CF solo
+      bodyHTML=`<div style="display:grid;grid-template-columns:1fr 2fr;height:100%;">
+        <div class="disc-col" style="border-right:1px solid var(--divider);">
+          <div class="wod-text">${fmtI(0,texts[0])}</div>
+        </div>
+        <div>
+          <div class="shared-row"><div class="wod-text">${fmt(sharedA, null)}</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--divider);">
+            <div class="disc-col"><div class="wod-text">${fmt(bBlocks[1], null)}</div></div>
+            <div class="disc-col"><div class="wod-text">${fmt(bBlocks[2], null)}</div></div>
+          </div>
+        </div></div>`;
+    } else {
+      // CF+GAP share A, FUN solo middle — fallback 3col
+      bodyHTML=`<div class="disc-body" style="grid-template-columns:1fr 1fr 1fr;height:100%;">
+        ${texts.map(t=>`<div class="disc-col"><div class="wod-text">${fmt(t)}</div></div>`).join('')}</div>`;
+    }
+
+  } else {
+    // Standard 3-column
+    headersHTML=`<div class="disc-headers" style="grid-template-columns:1fr 1fr 1fr;">
+      ${DISC.map(d=>`<div class="disc-header-cell">${d}</div>`).join('')}</div>`;
+    bodyHTML=`<div class="disc-body" style="grid-template-columns:1fr 1fr 1fr;height:100%;">
+      ${texts.map(t=>`<div class="disc-col"><div class="wod-text">${fmt(t)}</div></div>`).join('')}</div>`;
+  }
+
+  return `<div class="canva-card">
+    <div class="card-top">
+      <span class="card-day-name">${dayName}</span>
+      <span class="card-day-date">${dateStr}</span>
+    </div>
+    ${headersHTML}
+    ${bodyHTML}
+  </div>`;
+}
+
+/* ── BUILD APP ── */
+function buildApp(){
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  renderTabs(); renderWeek(currentWeek);
+}
+
+function renderTabs(){
+  const vis=getVisibleIndices(currentWeek);
+  const el=document.getElementById('week-tabs');
+  el.innerHTML='';
+  vis.forEach(idx=>{
+    const w=allWeeks[idx];
+    const btn=document.createElement('button');
+    btn.className='week-tab'+(idx===currentWeek?' active':'');
+    btn.textContent=fmtWeekLabel(w);
+    btn.onclick=()=>selectWeek(idx);
+    el.appendChild(btn);
+  });
+}
+
+function selectWeek(idx){
+  currentWeek=idx; currentDay=0;
+  renderTabs(); renderWeek(idx);
+}
+
+function renderWeek(idx){
+  const week=allWeeks[idx];
+  const nav=document.getElementById('day-nav');
+  nav.innerHTML='';
+  DAYS_ES.forEach((name,d)=>{
+    const btn=document.createElement('button');
+    btn.className='day-btn'+(d===currentDay?' active':'');
+    const ds=fmtDate(week.lunesDate,d);
+    btn.innerHTML=`${name}<br><small style="font-weight:300;font-size:10px;letter-spacing:0;">${ds}</small>`;
+    btn.onclick=()=>selectDay(d);
+    nav.appendChild(btn);
+  });
+  const cont=document.getElementById('days-container');
+  cont.innerHTML='';
+  DAYS_ES.forEach((name,d)=>{
+    const resolved=resolveDay(week.days[d]);
+    const dateStr=fmtDate(week.lunesDate,d);
+    const slide=document.createElement('div');
+    slide.className='day-slide'+(d===currentDay?' active':'');
+    slide.id='day-'+d;
+    slide.innerHTML=buildDayHTML(name,dateStr,resolved.cf,resolved.fun,resolved.gap,resolved.cloneOf,resolved.cfH,resolved.funH,resolved.gapH);
+    cont.appendChild(slide);
+  });
+  
+}
+
+
+
+
+function selectDay(idx){
+  currentDay=idx;
+  document.querySelectorAll('.day-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  document.querySelectorAll('.day-slide').forEach((s,i)=>s.classList.toggle('active',i===idx));
+  
+}
+
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// Fullscreen: just hide chrome - card already fills viewport
+document.addEventListener('fullscreenchange',()=>{
+  const appH = document.querySelector('.app-header');
+  const dayN = document.querySelector('.day-nav');
+  const cont = document.getElementById('days-container');
+  if(document.fullscreenElement){
+    appH.style.display='none';
+    dayN.style.display='none';
+    cont.style.height='100vh';
+  } else {
+    appH.style.display='';
+    dayN.style.display='';
+    cont.style.height='';
+  }
+});
+
+function resetApp(){
+  allWeeks=[];currentWeek=0;currentDay=0;
+  loadFromSheets();
+}
+
+function showError(msg){
+  document.getElementById('upload-error').innerHTML=`<div class="error-msg">⚠️ ${msg}</div>`;
+}
+
+
+
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('app').style.display==='none') return;
+  if(e.key==='ArrowRight'&&currentDay<5) selectDay(currentDay+1);
+  if(e.key==='ArrowLeft'&&currentDay>0) selectDay(currentDay-1);
+});
+</script>
+</body>
+</html>
