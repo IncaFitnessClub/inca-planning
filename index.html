@@ -236,7 +236,10 @@ function getVisible(cur){
 }
 
 /* ── IDEM RESOLUTION ── */
+// Formato bloque: "A. IDEM BLOQUE A CROSSFIT"
 const IDEM_RE=/^[AB]\.\s*IDEM\s+BLOQUE\s+([AB])\s+(CROSSFIT|FUNCIONAL|GAP)/i;
+// Formato clase completa: "IDEM CROSSFIT"
+const IDEM_FULL_RE=/^IDEM\s+(CROSSFIT|FUNCIONAL|GAP)\s*$/i;
 
 function extractBlock(text,letter){
   const lines=(text||'').split('\n');
@@ -244,11 +247,11 @@ function extractBlock(text,letter){
   for(const l of lines){
     const t=l.trim();
     if(!cap){
-      if(letter==='A'&&/^A[\.\s]/i.test(t)){cap=true;out=[l];}
-      else if(letter==='B'&&/^B[\.\s]/i.test(t)){cap=true;out=[l];}
+      if(letter==='A'&&/^A[\.\ s]/i.test(t)){cap=true;out=[l];}
+      else if(letter==='B'&&/^B[\.\ s]/i.test(t)){cap=true;out=[l];}
     }else{
-      if(letter==='A'&&/^B[\.\s]/i.test(t))break;
-      if(letter==='B'&&/^A[\.\s]/i.test(t))break;
+      if(letter==='A'&&/^B[\.\ s]/i.test(t))break;
+      if(letter==='B'&&/^A[\.\ s]/i.test(t))break;
       out.push(l);
     }
   }
@@ -260,11 +263,14 @@ function resolveDay(day){
   const origH={cf:day.cfH,fun:day.funH,gap:day.gapH};
   const dmap={crossfit:'cf',funcional:'fun',gap:'gap'};
 
-  // Detecta si un texto es 100% IDEM y devuelve la disciplina fuente
   function cloneSrc(text){
     if(!text)return null;
-    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.trim()!=='');
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l!=='');
     if(!lines.length)return null;
+    if(lines.length===1){
+      const mf=lines[0].match(IDEM_FULL_RE);
+      if(mf)return dmap[mf[1].toLowerCase()];
+    }
     if(!lines.every(l=>IDEM_RE.test(l)))return null;
     const srcs=new Set();
     for(const l of lines){const m=l.match(IDEM_RE);if(m)srcs.add(m[2].toLowerCase());}
@@ -273,10 +279,14 @@ function resolveDay(day){
 
   const cloneOf={cf:cloneSrc(orig.cf),fun:cloneSrc(orig.fun),gap:cloneSrc(orig.gap)};
 
-  // Resuelve texto: reemplaza líneas IDEM por el contenido real del bloque referenciado
   function resolveText(text){
     if(!text)return text;
-    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.trim()!=='');
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l!=='');
+    if(!lines.length)return text;
+    if(lines.length===1&&IDEM_FULL_RE.test(lines[0])){
+      const m=lines[0].match(IDEM_FULL_RE);
+      return orig[dmap[m[1].toLowerCase()]]||text;
+    }
     if(lines.every(l=>IDEM_RE.test(l))){
       let res='';
       for(const l of lines){
@@ -292,19 +302,24 @@ function resolveDay(day){
     }
     const out=[];
     for(const raw of text.split('\n')){
-      const t=raw.trim();const m=t.match(IDEM_RE);
-      if(m){
-        const blk=m[1].toUpperCase();
-        const src=dmap[m[2].toLowerCase()];
-        const ex=extractBlock(orig[src],blk);
-        if(ex)out.push(ex);
-      }else out.push(raw);
+      const t=raw.trim();
+      const mf=t.match(IDEM_FULL_RE);
+      if(mf){
+        const src=dmap[mf[1].toLowerCase()];
+        if(orig[src])out.push(orig[src]);
+      }else{
+        const m=t.match(IDEM_RE);
+        if(m){
+          const blk=m[1].toUpperCase();
+          const src=dmap[m[2].toLowerCase()];
+          const ex=extractBlock(orig[src],blk);
+          if(ex)out.push(ex);
+        }else out.push(raw);
+      }
     }
     return out.join('\n');
   }
 
-  // Para HTML: si es clon completo usamos el HTML de la fuente.
-  // Si el HTML tiene IDEM mezclado, devolvemos null y fmtWOD usa el texto resuelto como fallback.
   function resolveH(h,key,resolvedText){
     if(!resolvedText||!resolvedText.trim())return null;
     const cs=cloneOf[key];
