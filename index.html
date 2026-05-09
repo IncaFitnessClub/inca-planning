@@ -202,7 +202,8 @@ function convertSheetData(raw){
       }
       plain=plain.replace(/
 /g,'
-').replace(//g,'
+').replace(/
+/g,'
 ');
       plainRow.push(plain);
       const addr=colName(ci)+(ri+1);
@@ -213,21 +214,35 @@ function convertSheetData(raw){
   return {data,dataHTML};
 }
 
-async function loadFromSheets(){
+function loadFromSheets(){
   document.getElementById('upload-screen').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('upload-error').innerHTML='';
-  try{
-    const resp=await fetch(SCRIPT_URL);
-    if(!resp.ok) throw new Error('Error HTTP '+resp.status);
-    const raw=await resp.json();
-    const {data,dataHTML}=convertSheetData(raw);
-    allWeeks=parseWeeks(data,data,dataHTML,null);
-    if(!allWeeks.length) throw new Error('No se encontraron semanas en la planilla.');
-    currentWeek=detectCurrentWeek();
-    currentDay=0;
-    buildApp();
-  }catch(err){ showError('Error al cargar: '+err.message); }
+
+  // Use JSONP to bypass CORS - Google Apps Script supports ?callback= parameter
+  const callbackName = 'incaCallback_' + Date.now();
+  const script = document.createElement('script');
+  
+  window[callbackName] = function(raw){
+    delete window[callbackName];
+    document.head.removeChild(script);
+    try{
+      const {data,dataHTML}=convertSheetData(raw);
+      allWeeks=parseWeeks(data,data,dataHTML,null);
+      if(!allWeeks.length) throw new Error('No se encontraron semanas en la planilla.');
+      currentWeek=detectCurrentWeek();
+      currentDay=0;
+      buildApp();
+    }catch(err){ showError('Error al procesar datos: '+err.message); }
+  };
+
+  script.onerror = function(){
+    delete window[callbackName];
+    showError('No se pudo conectar con Google Sheets. Verificá tu conexión a internet.');
+  };
+
+  script.src = SCRIPT_URL + '?callback=' + callbackName;
+  document.head.appendChild(script);
 }ll = rowsRaw && rowsRaw[fechaRows[0]] && rowsRaw[fechaRows[0]][2];
   if(rawCell instanceof Date && !isNaN(rawCell)){
     baseDate = rawCell;
