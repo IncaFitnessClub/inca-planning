@@ -260,6 +260,7 @@ function resolveDay(day){
   const origH={cf:day.cfH,fun:day.funH,gap:day.gapH};
   const dmap={crossfit:'cf',funcional:'fun',gap:'gap'};
 
+  // Detecta si un texto es 100% IDEM y devuelve la disciplina fuente
   function cloneSrc(text){
     if(!text)return null;
     const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
@@ -272,6 +273,7 @@ function resolveDay(day){
 
   const cloneOf={cf:cloneSrc(orig.cf),fun:cloneSrc(orig.fun),gap:cloneSrc(orig.gap)};
 
+  // Resuelve texto: reemplaza líneas IDEM por el contenido real del bloque referenciado
   function resolveText(text){
     if(!text)return text;
     const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
@@ -279,30 +281,48 @@ function resolveDay(day){
       let res='';
       for(const l of lines){
         const m=l.match(IDEM_RE);
-        if(m){const blk=m[1].toUpperCase();const src=dmap[m[2].toLowerCase()];const ex=extractBlock(orig[src],blk);if(ex)res+=(res?'\n':'')+ex;}
+        if(m){
+          const blk=m[1].toUpperCase();
+          const src=dmap[m[2].toLowerCase()];
+          const ex=extractBlock(orig[src],blk);
+          if(ex)res+=(res?'\n':'')+ex;
+        }
       }
       return res;
     }
     const out=[];
     for(const raw of text.split('\n')){
       const t=raw.trim();const m=t.match(IDEM_RE);
-      if(m){const blk=m[1].toUpperCase();const src=dmap[m[2].toLowerCase()];const ex=extractBlock(orig[src],blk);if(ex)out.push(ex);}
-      else out.push(raw);
+      if(m){
+        const blk=m[1].toUpperCase();
+        const src=dmap[m[2].toLowerCase()];
+        const ex=extractBlock(orig[src],blk);
+        if(ex)out.push(ex);
+      }else out.push(raw);
     }
     return out.join('\n');
   }
 
-  function resolveH(h,key){
-    if(!h)return null;
+  // Para HTML: si es clon completo usamos el HTML de la fuente.
+  // Si el HTML tiene IDEM mezclado, devolvemos null y fmtWOD usa el texto resuelto como fallback.
+  function resolveH(h,key,resolvedText){
+    if(!resolvedText||!resolvedText.trim())return null;
     const cs=cloneOf[key];
     if(cs)return origH[cs]||null;
-    // Strip IDEM lines from HTML
-    return h.replace(/(<br\s*[/]?>)?[^<]*IDEM\s+BLOQUE\s+[AB]\s+(CROSSFIT|FUNCIONAL|GAP)[^<]*/gi,'');
+    if(!h)return null;
+    if(!/IDEM/i.test(h))return h;
+    return null;
   }
 
+  const cfR=resolveText(orig.cf);
+  const funR=resolveText(orig.fun);
+  const gapR=resolveText(orig.gap);
+
   return{
-    cf:resolveText(orig.cf),fun:resolveText(orig.fun),gap:resolveText(orig.gap),
-    cfH:resolveH(origH.cf,'cf'),funH:resolveH(origH.fun,'fun'),gapH:resolveH(origH.gap,'gap'),
+    cf:cfR, fun:funR, gap:gapR,
+    cfH:resolveH(origH.cf,'cf',cfR),
+    funH:resolveH(origH.fun,'fun',funR),
+    gapH:resolveH(origH.gap,'gap',gapR),
     cloneOf
   };
 }
@@ -333,7 +353,6 @@ function parseHTMLSource(htmlSrc){
   }
   if(cur)parts.push({t:cur,b:bold});
 
-  // Build line array with bold info
   let full='';
   for(const p of parts)full+=p.b?'\x01'+p.t+'\x02':p.t;
   const lines=full.split('\n');
@@ -358,7 +377,7 @@ function parseHTMLSource(htmlSrc){
 function fmtWOD(text,htmlSrc){
   if(!text||!text.trim())return'<span class="wod-empty">Sin planificación</span>';
   if(htmlSrc){const r=parseHTMLSource(htmlSrc);if(r)return r;}
-  // Fallback
+  // Fallback: texto plano
   const lines=text.split('\n').map(l=>l.trim());
   let html='';
   for(let i=0;i<lines.length;i++){
