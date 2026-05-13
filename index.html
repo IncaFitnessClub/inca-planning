@@ -49,7 +49,7 @@
   .disc-col{padding:14px 18px;border-right:1px solid var(--div);text-align:center;display:flex;align-items:center;justify-content:center;overflow:hidden;}
   .disc-col:last-child{border-right:none;}
   .shared-row{padding:14px 20px;text-align:center;border-bottom:1px solid var(--div);background:var(--cream);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .wod-text{font-family:'Barlow',sans-serif;font-size:clamp(12px,1.9vw,24px);line-height:1.5;color:var(--dark);width:100%;word-break:break-word;overflow-wrap:break-word;}
+  .wod-text{font-family:'Barlow',sans-serif;font-size:16px;line-height:1.5;color:var(--dark);width:100%;word-break:break-word;overflow-wrap:break-word;}
   .wod-bold{display:block;font-weight:700;}
   .wod-line{display:block;font-weight:700;}
   .wod-div{display:block;border:none;border-top:1px solid var(--div);margin:10px auto;width:70%;}
@@ -572,6 +572,43 @@ document.addEventListener('keydown',e=>{
 });
 
 loadData();
+
+/* ── AUTOFIT WOD TEXT ── */
+function fitWodText(){
+  const slide=document.querySelector('.day-slide.active');
+  if(!slide)return;
+  const card=slide.querySelector('.canva-card');
+  if(!card)return;
+  const allTexts=Array.from(slide.querySelectorAll('.wod-text'));
+  if(!allTexts.length)return;
+  const cols=Array.from(slide.querySelectorAll('.disc-col, .shared-row'));
+
+  // Resetear tamaño
+  allTexts.forEach(t=>{t.style.fontSize='';});
+
+  // Buscar tamaño máximo que no desborde ninguna columna
+  let lo=10,hi=56,best=10;
+  for(let iter=0;iter<14;iter++){
+    const mid=Math.round((lo+hi)/2);
+    allTexts.forEach(t=>t.style.fontSize=mid+'px');
+    let overflows=false;
+    cols.forEach(col=>{
+      if(col.scrollHeight>col.offsetHeight+4)overflows=true;
+    });
+    if(card.scrollHeight>card.offsetHeight+4)overflows=true;
+    if(overflows){hi=mid-1;}else{best=mid;lo=mid+1;}
+  }
+  allTexts.forEach(t=>t.style.fontSize=best+'px');
+}
+
+const _origSelectDay=selectDay;
+selectDay=function(idx){_origSelectDay(idx);setTimeout(fitWodText,60);};
+const _origSelectWeek=selectWeek;
+selectWeek=function(idx){_origSelectWeek(idx);setTimeout(fitWodText,60);};
+const _origRenderApp=renderApp;
+renderApp=function(){_origRenderApp();setTimeout(fitWodText,120);};
+window.addEventListener('resize',()=>setTimeout(fitWodText,100));
+document.addEventListener('fullscreenchange',()=>setTimeout(fitWodText,250));
 </script>
 </body>
 </html>
