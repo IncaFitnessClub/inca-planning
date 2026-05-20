@@ -54,6 +54,16 @@
   .wod-line{display:block;font-weight:700;}
   .wod-div{display:block;border:none;border-top:1px solid var(--div);margin:10px auto;width:70%;}
   .wod-empty{color:#aaa;font-style:italic;font-size:0.88em;}
+  /* 25 DE MAYO */
+  .canva-card.mayo25{background:linear-gradient(160deg,#74b9e8 0%,#c8e6f7 18%,#f5f5f5 38%,#ffffff 50%,#f5f5f5 62%,#c8e6f7 82%,#74b9e8 100%);}
+  .canva-card.mayo25 .card-top{background:linear-gradient(90deg,#3a8fc7 0%,#2d6fa3 50%,#3a8fc7 100%);}
+  .canva-card.mayo25 .disc-headers{background:linear-gradient(90deg,#3a8fc7 0%,#2d6fa3 50%,#3a8fc7 100%);}
+  .canva-card.mayo25 .wod-text{color:#1a3a52;}
+  .canva-card.mayo25 .wod-div{border-top-color:rgba(45,111,163,0.3);}
+  .canva-card.mayo25 .disc-col{border-right-color:rgba(45,111,163,0.2);}
+  .canva-card.mayo25 .shared-row{border-bottom-color:rgba(45,111,163,0.2);}
+  .mayo25-badge{position:absolute;top:8px;right:16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;}
+
   @media print{
     body{background:white;}
     .app-header,.day-nav{display:none!important;}
@@ -498,7 +508,12 @@ function buildDay(name,date,cf,fun,gap,cloneOf,cfH,funH,gapH){
     body='<div class="disc-body" style="grid-template-columns:1fr 1fr 1fr;">'+texts.map((t,i)=>col('',w(i,t,hArr[i]))).join('')+'</div>';
   }
 
-  return'<div class="canva-card"><div class="card-top"><span class="card-day-name">'+name+'</span><span class="card-day-date">'+date+'</span></div>'+hdrs+body+'</div>';
+  // Detectar 25 de mayo
+  const parts25=date.split('/');
+  const is25mayo=parts25.length===3&&parts25[0]==='25'&&parts25[1]==='05';
+  const cardClass=is25mayo?' mayo25':'';
+  const badge=is25mayo?'<span class="mayo25-badge">🇦🇷 25 de Mayo</span>':'';
+  return'<div class="canva-card'+cardClass+'" style="position:relative;"><div class="card-top"><span class="card-day-name">'+name+'</span><span class="card-day-date">'+date+'</span>'+badge+'</div>'+hdrs+body+'</div>';
 }
 
 /* ── RENDER APP ── */
