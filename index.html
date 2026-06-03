@@ -64,6 +64,9 @@
   .canva-card.mayo25 .shared-row{border-bottom-color:rgba(45,111,163,0.2);}
   .mayo25-badge{position:absolute;top:8px;right:16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;}
 
+  #screen-keepalive{position:fixed;right:2px;bottom:2px;width:2px;height:2px;background:rgba(255,255,255,0.08);pointer-events:none;z-index:9999;animation:screenKeepalive 30s linear infinite;}
+  @keyframes screenKeepalive{0%{transform:translate(0,0);opacity:0.04;}50%{transform:translate(-12px,-8px);opacity:0.12;}100%{transform:translate(0,0);opacity:0.04;}}
+
   @media print{
     body{background:white;}
     .app-header,.day-nav{display:none!important;}
@@ -97,12 +100,28 @@
   <div class="day-nav" id="day-nav"></div>
   <div id="days-wrap"></div>
 </div>
+<div id="screen-keepalive" aria-hidden="true"></div>
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxE6t91W7SR6Sn6DnpB2K7J7nGQWxZJYcaWptWpfv5sCstAVEy_r7TXQUWmbNNxHNtK2Q/exec';
 const DAYS_ES=['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 const COL_IDX=[1,4,7,10,13,16];
 const DISC=['CROSSFIT','FUNCIONAL','GAP'];
 let allWeeks=[],currentWeek=0,currentDay=0;
+
+let wakeLock=null;
+async function requestWakeLock(){
+  if(!('wakeLock' in navigator))return false;
+  try{
+    wakeLock=await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release',()=>{wakeLock=null;});
+    return true;
+  }catch(e){wakeLock=null;return false;}
+}
+function releaseWakeLock(){
+  if(!wakeLock)return;
+  wakeLock.release().catch(()=>{});
+  wakeLock=null;
+}
 
 function loadData(){
   document.getElementById('loading').style.display='flex';
@@ -567,17 +586,32 @@ function selectDay(idx){
   document.querySelectorAll('.day-slide').forEach((s,i)=>s.classList.toggle('active',i===idx));
 }
 
-function toggleFS(){
+async function toggleFS(){
   if(!document.fullscreenElement){
-    document.documentElement.requestFullscreen().catch(()=>{});
-  }else document.exitFullscreen();
+    await document.documentElement.requestFullscreen().catch(()=>{});
+    requestWakeLock();
+  }else{
+    releaseWakeLock();
+    document.exitFullscreen();
+  }
 }
 
 document.addEventListener('fullscreenchange',()=>{
   const appH=document.querySelector('.app-header');
   const dayN=document.querySelector('.day-nav');
-  if(document.fullscreenElement){appH.style.display='none';dayN.style.display='none';}
-  else{appH.style.display='';dayN.style.display='';}
+  if(document.fullscreenElement){
+    appH.style.display='none';
+    dayN.style.display='none';
+  }else{
+    appH.style.display='';
+    dayN.style.display='';
+    releaseWakeLock();
+  }
+  setTimeout(fitWodText,250);
+});
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&document.fullscreenElement)requestWakeLock();
 });
 
 document.addEventListener('keydown',e=>{
