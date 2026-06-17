@@ -54,6 +54,16 @@
   .wod-line{display:block;font-weight:700;}
   .wod-div{display:block;border:none;border-top:1px solid var(--div);margin:10px auto;width:70%;}
   .wod-empty{color:#aaa;font-style:italic;font-size:0.88em;}
+  /* MODO MUNDIAL - celeste y blanco Argentina */
+  .canva-card.mundial{background:linear-gradient(160deg,#d6eaf8 0%,#ebf5fb 20%,#ffffff 40%,#ffffff 60%,#ebf5fb 80%,#d6eaf8 100%);}
+  .canva-card.mundial .card-top{background:linear-gradient(90deg,#3d9bdc 0%,#2980b8 40%,#1a6fa8 60%,#3d9bdc 100%);}
+  .canva-card.mundial .disc-headers{background:linear-gradient(90deg,#2980b8 0%,#1a6fa8 50%,#2980b8 100%);}
+  .canva-card.mundial .wod-text{color:#1a3a52;}
+  .canva-card.mundial .wod-div{border-top-color:rgba(41,128,184,0.25);}
+  .canva-card.mundial .disc-col{border-right-color:rgba(41,128,184,0.18);}
+  .canva-card.mundial .shared-row{border-bottom-color:rgba(41,128,184,0.18);background:transparent;}
+  .mundial-watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;opacity:0.13;}
+
   /* 25 DE MAYO */
   .canva-card.mayo25{background:linear-gradient(160deg,#74b9e8 0%,#c8e6f7 18%,#f5f5f5 38%,#ffffff 50%,#f5f5f5 62%,#c8e6f7 82%,#74b9e8 100%);}
   .canva-card.mayo25 .card-top{background:linear-gradient(90deg,#3a8fc7 0%,#2d6fa3 50%,#3a8fc7 100%);}
@@ -535,9 +545,16 @@ function buildDay(name,date,cf,fun,gap,cloneOf,cfH,funH,gapH){
   // Detectar 25 de mayo
   const parts25=date.split('/');
   const is25mayo=parts25.length===3&&parts25[0]==='25'&&parts25[1]==='05';
-  const cardClass=is25mayo?' mayo25':'';
+  // Modo mundial: activo hasta fin del Mundial 2026 (19/07/2026)
+  const partsD=date.split('/');
+  const cardDate=partsD.length===3?new Date(+partsD[2],+partsD[1]-1,+partsD[0]):null;
+  const mundialStart=new Date(2026,5,11); // 11 jun 2026
+  const mundialEnd=new Date(2026,6,19);   // 19 jul 2026
+  const isMundial=cardDate&&cardDate>=mundialStart&&cardDate<=mundialEnd;
+  const cardClass=(is25mayo?' mayo25':'')+(isMundial?' mundial':'');
   const badge=is25mayo?'<span class="mayo25-badge">🇦🇷 25 de Mayo</span>':'';
-  return'<div class="canva-card'+cardClass+'" style="position:relative;"><div class="card-top"><span class="card-day-name">'+name+'</span><span class="card-day-date">'+date+'</span>'+badge+'</div>'+hdrs+body+'</div>';
+  const watermark=isMundial?'<div class="mundial-watermark"><svg width="340" height="160" viewBox="0 0 340 160" xmlns="http://www.w3.org/2000/svg"><text x="170" y="118" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,Impact,sans-serif" font-size="130" font-weight="900" fill="#f5c518" letter-spacing="-2">INCA</text><text x="170" y="148" text-anchor="middle" font-family="Barlow,Arial,sans-serif" font-size="22" font-weight="400" fill="#f5c518" letter-spacing="8">Fitness club</text></svg></div>':'';
+  return'<div class="canva-card'+cardClass+'" style="position:relative;"><div class="card-top"><span class="card-day-name">'+name+'</span><span class="card-day-date">'+date+'</span>'+badge+'</div>'+hdrs+watermark+body+'</div>';
 }
 
 /* ── RENDER APP ── */
